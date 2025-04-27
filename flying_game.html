@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>简单的飞行游戏</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      display: block;
+      background: #87CEEB; /* 天空蓝 */
+    }
+
+    .game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      color: red;
+      text-align: center;
+      display: none;
+    }
+
+    .restart-button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .restart-button:hover {
+      background: #45A049;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div class="game-over" id="gameOver">
+    游戏结束！
+    <button class="restart-button" id="restartButton">重新开始</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height - 100,
+      width: 50,
+      height: 50,
+      color: 'blue',
+      speed: 5,
+      dx: 0
+    };
+
+    const obstacles = [];
+    let frames = 0;
+    const obstacleFrequency = 100;
+    let gameRunning = true;
+
+    const gameOverElement = document.getElementById('gameOver');
+    const restartButton = document.getElementById('restartButton');
+
+    // 绘制玩家飞机
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    // 绘制障碍物
+    function drawObstacles() {
+      ctx.fillStyle = 'red';
+      obstacles.forEach(obstacle => {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      });
+    }
+
+    // 移动玩家飞机
+    function movePlayer() {
+      player.x += player.dx;
+
+      // 确保飞机在屏幕内
+      if (player.x < 0) {
+        player.x = 0;
+      }
+      if (player.x + player.width > canvas.width) {
+        player.x = canvas.width - player.width;
+      }
+    }
+
+    // 更新障碍物
+    function updateObstacles() {
+      obstacles.forEach((obstacle, index) => {
+        obstacle.y += obstacle.speed;
+
+        // 移除屏幕外的障碍物
+        if (obstacle.y > canvas.height) {
+          obstacles.splice(index, 1);
+        }
+
+        // 检查玩家与障碍物的碰撞
+        if (
+          player.x < obstacle.x + obstacle.width &&
+          player.x + player.width > obstacle.x &&
+          player.y < obstacle.y + obstacle.height &&
+          player.y + player.height > obstacle.y
+        ) {
+          gameOver();
+        }
+      });
+
+      // 添加新的障碍物
+      if (frames % obstacleFrequency === 0) {
+        const obstacleWidth = Math.random() * 100 + 20;
+        const obstacleX = Math.random() * (canvas.width - obstacleWidth);
+        const obstacleSpeed = Math.random() * 2 + 2;
+        obstacles.push({
+          x: obstacleX,
+          y: -50,
+          width: obstacleWidth,
+          height: 20,
+          speed: obstacleSpeed
+        });
+      }
+    }
+
+    // 游戏结束
+    function gameOver() {
+      gameRunning = false;
+      gameOverElement.style.display = 'block';
+    }
+
+    // 重新开始游戏
+    function restartGame() {
+      gameRunning = true;
+      gameOverElement.style.display = 'none';
+      player.x = canvas.width / 2;
+      player.y = canvas.height - 100;
+      obstacles.length = 0;
+      frames = 0;
+      update();
+    }
+
+    // 更新游戏状态
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (gameRunning) {
+        drawPlayer();
+        drawObstacles();
+
+        movePlayer();
+        updateObstacles();
+
+        frames++;
+        requestAnimationFrame(update);
+      }
+    }
+
+    // 键盘按下事件
+    function keyDown(e) {
+      if (e.key === 'ArrowLeft') {
+        player.dx = -player.speed;
+      } else if (e.key === 'ArrowRight') {
+        player.dx = player.speed;
+      }
+    }
+
+    // 键盘抬起事件
+    function keyUp(e) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        player.dx = 0;
+      }
+    }
+
+    document.addEventListener('keydown', keyDown);
+    document.addEventListener('keyup', keyUp);
+    restartButton.addEventListener('click', restartGame);
+
+    update();
+  </script>
+</body>
+</html>
